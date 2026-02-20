@@ -1,0 +1,132 @@
+version: '3.8'
+
+services:
+  # MQTT Broker
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: factory-mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-log:/mosquitto/log
+    networks:
+      - factory-network
+    restart: unless-stopped
+
+  # Time Series Database
+  influxdb:
+    image: influxdb:2.7
+    container_name: factory-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword123
+      - DOCKER_INFLUXDB_INIT_ORG=factory-org
+      - DOCKER_INFLUXDB_INIT_BUCKET=sensor-data
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=factory-super-secret-token
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    networks:
+      - factory-network
+    restart: unless-stopped
+
+  # Relational Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: factory-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+      - POSTGRES_DB=factory_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - factory-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Node.js Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: factory-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/factory_db?schema=public
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=factory-super-secret-token
+      - INFLUXDB_ORG=factory-org
+      - INFLUXDB_BUCKET=sensor-data
+      - MQTT_BROKER_URL=mqtt://mosquitto:1883
+      - JWT_SECRET=factory-jwt-super-secret-key-2024
+      - JWT_EXPIRES_IN=24h
+    depends_on:
+      postgres:
+        condition: service_healthy
+      influxdb:
+        condition: service_started
+      mosquitto:
+        condition: service_started
+    networks:
+      - factory-network
+    restart: unless-stopped
+
+  # Vue.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: factory-frontend
+    ports:
+      - "5173:80"
+    environment:
+      - VITE_API_URL=http://localhost:3000
+      - VITE_WS_URL=ws://localhost:3000
+    depends_on:
+      - backend
+    networks:
+      - factory-network
+    restart: unless-stopped
+
+  # Python Simulator
+  simulator:
+    build:
+      context: ./simulator
+      dockerfile: Dockerfile
+    container_name: factory-simulator
+    environment:
+      - MQTT_BROKER_HOST=mosquitto
+      - MQTT_BROKER_PORT=1883
+      - BACKEND_WS_URL=ws://backend:3000
+    depends_on:
+      - mosquitto
+      - backend
+    networks:
+      - factory-network
+    restart: unless-stopped
+
+volumes:
+  mosquitto-data:
+  mosquitto-log:
+  influxdb-data:
+  postgres-data:
+
+networks:
+  factory-network:
+    driver: bridge
+

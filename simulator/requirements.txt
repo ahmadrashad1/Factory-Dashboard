@@ -1,0 +1,15 @@
+# Python Factory Simulator Dependencies
+
+# MQTT Client
+paho-mqtt==1.6.1
+
+# WebSocket client for video streaming
+websocket-client==1.6.4
+
+# Video processing
+opencv-python-headless==4.8.1.78
+numpy==1.26.2
+
+# Utilities
+python-dotenv==1.0.0
+

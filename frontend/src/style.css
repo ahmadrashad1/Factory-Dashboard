@@ -1,0 +1,187 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+  body {
+    @apply bg-industrial-950 text-gray-100;
+    background-image: 
+      radial-gradient(at 20% 30%, rgba(34, 197, 94, 0.05) 0px, transparent 50%),
+      radial-gradient(at 80% 70%, rgba(34, 197, 94, 0.03) 0px, transparent 50%),
+      linear-gradient(180deg, #020617 0%, #0f172a 50%, #020617 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-industrial-900;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-factory-600 rounded;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-factory-500;
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  .card {
+    @apply bg-industrial-900/80 backdrop-blur-sm border border-industrial-700/50 rounded-xl p-6;
+    box-shadow: 
+      0 4px 6px -1px rgba(0, 0, 0, 0.3),
+      0 2px 4px -2px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .card-header {
+    @apply flex items-center justify-between mb-4 pb-3 border-b border-industrial-700/50;
+  }
+
+  .card-title {
+    @apply text-lg font-display font-semibold text-factory-400 tracking-wider uppercase;
+  }
+
+  .btn {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 
+           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-industrial-900;
+  }
+
+  .btn-primary {
+    @apply btn bg-gradient-to-r from-factory-600 to-factory-500 text-white 
+           hover:from-factory-500 hover:to-factory-400 
+           focus:ring-factory-500 shadow-lg shadow-factory-500/25;
+  }
+
+  .btn-secondary {
+    @apply btn bg-industrial-800 text-gray-200 border border-industrial-600 
+           hover:bg-industrial-700 hover:border-industrial-500 
+           focus:ring-industrial-500;
+  }
+
+  .input {
+    @apply w-full px-4 py-3 bg-industrial-800/50 border border-industrial-600 rounded-lg 
+           text-gray-100 placeholder-gray-500
+           focus:outline-none focus:border-factory-500 focus:ring-1 focus:ring-factory-500
+           transition-all duration-200;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wider;
+  }
+
+  .status-badge {
+    @apply px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide;
+  }
+
+  .status-online {
+    @apply status-badge bg-factory-500/20 text-factory-400 border border-factory-500/30;
+  }
+
+  .status-offline {
+    @apply status-badge bg-red-500/20 text-red-400 border border-red-500/30;
+  }
+
+  .status-warning {
+    @apply status-badge bg-amber-500/20 text-amber-400 border border-amber-500/30;
+  }
+
+  /* Data display styles */
+  .data-value {
+    @apply text-3xl font-mono font-bold text-white;
+  }
+
+  .data-label {
+    @apply text-sm text-gray-500 uppercase tracking-wider;
+  }
+
+  .data-unit {
+    @apply text-lg font-mono text-factory-400 ml-1;
+  }
+
+  /* Glow effects */
+  .glow-green {
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.3), 0 0 20px rgba(34, 197, 94, 0.2);
+  }
+
+  .glow-red {
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.3), 0 0 20px rgba(239, 68, 68, 0.2);
+  }
+
+  /* Scanline effect */
+  .scanlines::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.1) 2px,
+      rgba(0, 0, 0, 0.1) 4px
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Grid pattern overlay */
+  .grid-pattern {
+    background-image: 
+      linear-gradient(rgba(34, 197, 94, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34, 197, 94, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+}
+
+/* Animations */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+
+  .animate-pulse-green {
+    animation: pulseGreen 2s ease-in-out infinite;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulseGreen {
+    0%, 100% {
+      box-shadow: 0 0 5px rgba(34, 197, 94, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.6), 0 0 30px rgba(34, 197, 94, 0.4);
+    }
+  }
+}
+

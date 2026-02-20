@@ -1,0 +1,73 @@
+// Prisma Schema for Factory Monitoring System
+// Manages Users and Aggregated Statistics
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role     @default(OPERATOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
+// Aggregated sensor statistics (1-minute averages)
+model SensorAggregate {
+  id              String   @id @default(uuid())
+  machineId       String
+  avgTemperature  Float
+  minTemperature  Float
+  maxTemperature  Float
+  avgPressure     Float
+  minPressure     Float
+  maxPressure     Float
+  dataPoints      Int
+  periodStart     DateTime
+  periodEnd       DateTime
+  createdAt       DateTime @default(now())
+
+  @@index([machineId])
+  @@index([periodStart])
+  @@index([machineId, periodStart])
+  @@map("sensor_aggregates")
+}
+
+// Machine registry
+model Machine {
+  id          String   @id @default(uuid())
+  machineId   String   @unique
+  name        String
+  location    String?
+  status      MachineStatus @default(ONLINE)
+  lastSeen    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("machines")
+}
+
+enum MachineStatus {
+  ONLINE
+  OFFLINE
+  MAINTENANCE
+  ERROR
+}
+

@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes (local data)
+data/
+influxdb-data/
+postgres-data/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Prisma
+prisma/*.db
+
+# Video files for testing
+*.mp4
+*.avi
+*.mov
+!simulator/sample_video.mp4
+
