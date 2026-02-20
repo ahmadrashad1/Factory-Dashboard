@@ -55,7 +55,7 @@ router.get('/latest', async (req: AuthenticatedRequest, res: Response): Promise<
     });
 
     const latestAggregates = await Promise.all(
-      machines.map(async (machine) => {
+      machines.map(async (machine: { machineId: string }) => {
         const aggregate = await prisma.sensorAggregate.findFirst({
           where: { machineId: machine.machineId },
           orderBy: { periodEnd: 'desc' },
@@ -141,20 +141,20 @@ router.get('/summary', async (req: AuthenticatedRequest, res: Response): Promise
     }
 
     // Calculate overall summary
-    const temps = aggregates.map((a) => a.avgTemperature);
-    const pressures = aggregates.map((a) => a.avgPressure);
+    const temps: number[] = aggregates.map((a: { avgTemperature: number }) => a.avgTemperature);
+    const pressures: number[] = aggregates.map((a: { avgPressure: number }) => a.avgPressure);
 
     const summary = {
       period: { hours, since: since.toISOString() },
-      totalDataPoints: aggregates.reduce((sum, a) => sum + a.dataPoints, 0),
+      totalDataPoints: aggregates.reduce((sum: number, a: { dataPoints: number }) => sum + a.dataPoints, 0),
       aggregateCount: aggregates.length,
       temperature: {
-        avg: temps.reduce((a, b) => a + b, 0) / temps.length,
+        avg: temps.reduce((a: number, b: number) => a + b, 0) / temps.length,
         min: Math.min(...temps),
         max: Math.max(...temps),
       },
       pressure: {
-        avg: pressures.reduce((a, b) => a + b, 0) / pressures.length,
+        avg: pressures.reduce((a: number, b: number) => a + b, 0) / pressures.length,
         min: Math.min(...pressures),
         max: Math.max(...pressures),
       },
