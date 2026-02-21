@@ -2,9 +2,11 @@
  * Video Relay Service
  * ===================
  * Handles video frame relay from simulator to frontend clients.
+ * Uses a separate HTTP server so it does not share the upgrade handler with Socket.IO
+ * (avoids "Invalid frame header" when both ws and Socket.IO attach to the same server).
  */
 
-import { Server as SocketIOServer, Socket } from 'socket.io';
+import { Server as SocketIOServer } from 'socket.io';
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 
@@ -20,6 +22,7 @@ export class VideoRelayService {
   private static instance: VideoRelayService;
   private io: SocketIOServer;
   private wss: WebSocketServer | null = null;
+  private videoServer: http.Server | null = null;
   private simulatorSocket: WebSocket | null = null;
   private frameCount = 0;
   private lastFrameTime = Date.now();
@@ -42,18 +45,23 @@ export class VideoRelayService {
   }
 
   /**
-   * Initialize WebSocket server for simulator connection
+   * Initialize WebSocket server on a separate HTTP server (avoids conflict with Socket.IO).
    */
-  initialize(): void {
-    // Create WebSocket server on a different path for simulator
-    const server = this.io.httpServer as http.Server;
-    
-    this.wss = new WebSocketServer({ 
-      server,
-      path: '/video'
+  initialize(videoPort: number): void {
+    this.videoServer = http.createServer((_req, res) => {
+      res.writeHead(404);
+      res.end();
     });
 
-    console.log('🎥 Video relay WebSocket server initialized on /video');
+    this.wss = new WebSocketServer({
+      server: this.videoServer,
+      path: '/video',
+      perMessageDeflate: false,
+    });
+
+    this.videoServer.listen(videoPort, () => {
+      console.log(`🎥 Video relay WebSocket server listening on port ${videoPort} (path /video)`);
+    });
 
     this.wss.on('connection', (ws: WebSocket) => {
       console.log('🎬 Video simulator connected');
@@ -121,6 +129,18 @@ export class VideoRelayService {
       simulatorConnected: this.simulatorSocket !== null,
       clientCount: this.io.engine.clientsCount,
     };
+  }
+
+  /**
+   * Close the video server (for graceful shutdown).
+   */
+  close(): void {
+    if (this.videoServer) {
+      this.videoServer.close();
+      this.videoServer = null;
+    }
+    this.wss = null;
+    this.simulatorSocket = null;
   }
 }
 

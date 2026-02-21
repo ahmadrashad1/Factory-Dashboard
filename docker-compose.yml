@@ -62,9 +62,11 @@ services:
     container_name: factory-backend
     ports:
       - "3000:3000"
+      - "3001:3001"
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - VIDEO_PORT=3001
       - DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/factory_db?schema=public
       - INFLUXDB_URL=http://influxdb:8086
       - INFLUXDB_TOKEN=factory-super-secret-token
@@ -110,7 +112,7 @@ services:
     environment:
       - MQTT_BROKER_HOST=mosquitto
       - MQTT_BROKER_PORT=1883
-      - BACKEND_WS_URL=ws://backend:3000
+      - BACKEND_WS_URL=ws://backend:3001
     depends_on:
       - mosquitto
       - backend

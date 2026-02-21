@@ -27,24 +27,28 @@ import { prisma } from './lib/prisma';
 
 // Configuration
 const PORT = process.env.PORT || 3000;
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173';
+const VIDEO_PORT = parseInt(process.env.VIDEO_PORT || '3001', 10);
+const CORS_ORIGINS = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://127.0.0.1:5173')
+  .split(',')
+  .map((s) => s.trim());
 
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
 
-// Initialize Socket.IO
+// Initialize Socket.IO (perMessageDeflate: false avoids "Invalid frame header" in some browsers/proxies)
 const io = new SocketIOServer(server, {
   cors: {
-    origin: CORS_ORIGIN,
+    origin: CORS_ORIGINS,
     methods: ['GET', 'POST'],
     credentials: true,
   },
+  perMessageDeflate: false,
 });
 
 // Middleware
 app.use(cors({
-  origin: CORS_ORIGIN,
+  origin: CORS_ORIGINS,
   credentials: true,
 }));
 app.use(express.json());
@@ -89,9 +93,9 @@ async function initializeServices() {
     });
     console.log('✅ MQTT service initialized');
 
-    // Initialize video relay service
+    // Initialize video relay on separate server (avoids Socket.IO "Invalid frame header")
     const videoRelay = VideoRelayService.getInstance(io);
-    videoRelay.initialize();
+    videoRelay.initialize(VIDEO_PORT);
     console.log('✅ Video relay service initialized');
 
     // Initialize aggregation cron job
@@ -123,7 +127,8 @@ async function initializeServices() {
     server.listen(PORT, () => {
       console.log(`\n🏭 Factory Monitoring Backend running on port ${PORT}`);
       console.log(`   API: http://localhost:${PORT}/api`);
-      console.log(`   WebSocket: ws://localhost:${PORT}`);
+      console.log(`   Socket.IO (live data): ws://localhost:${PORT}`);
+      console.log(`   Video ingest: ws://localhost:${VIDEO_PORT}/video`);
       console.log(`   Health: http://localhost:${PORT}/health\n`);
     });
 
@@ -134,28 +139,24 @@ async function initializeServices() {
 }
 
 // Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('\n🛑 SIGTERM received, shutting down gracefully...');
-  
+async function shutdown(): Promise<void> {
   MqttService.getInstance().disconnect();
+  VideoRelayService.getInstance().close();
   await prisma.$disconnect();
-  
   server.close(() => {
     console.log('👋 Server closed');
     process.exit(0);
   });
+}
+
+process.on('SIGTERM', () => {
+  console.log('\n🛑 SIGTERM received, shutting down gracefully...');
+  shutdown();
 });
 
-process.on('SIGINT', async () => {
+process.on('SIGINT', () => {
   console.log('\n🛑 SIGINT received, shutting down gracefully...');
-  
-  MqttService.getInstance().disconnect();
-  await prisma.$disconnect();
-  
-  server.close(() => {
-    console.log('👋 Server closed');
-    process.exit(0);
-  });
+  shutdown();
 });
 
 // Start the application
