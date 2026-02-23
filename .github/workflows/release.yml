@@ -1,0 +1,56 @@
+# GitHub Release workflow for Factory Dashboard
+# Triggers: push of tag v* (e.g. v1.0.0) or when a release is published
+# Repo: https://github.com/ahmadrashad1/Factory-Dashboard
+
+name: Release
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  validate-build:
+    name: Validate Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build all services
+        run: docker compose build
+
+  release-info:
+    name: Release summary
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release summary
+        run: |
+          echo "## Factory Dashboard Release" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ github.event.release.tag_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Quick Start:**" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "git clone https://github.com/ahmadrashad1/Factory-Dashboard.git" >> $GITHUB_STEP_SUMMARY
+          echo "cd Factory-Dashboard" >> $GITHUB_STEP_SUMMARY
+          echo "docker compose up --build -d" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend:** http://localhost:5173" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend API:** http://localhost:3000" >> $GITHUB_STEP_SUMMARY
+          echo "- **InfluxDB UI:** http://localhost:8086" >> $GITHUB_STEP_SUMMARY
